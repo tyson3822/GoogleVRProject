@@ -12,6 +12,7 @@ public class LocalPathController : MonoBehaviour
     private string[] _pathFolders;
     private int _pathLength;
 
+    public GameObject _backButtonSample;
     public GameObject _fileButtonSample;
     public GameObject _folderButtonSample;
     public GameObject _obbVideoSample;
@@ -36,19 +37,27 @@ public class LocalPathController : MonoBehaviour
         //transform.Find("Text").GetComponent<Text>().text = "Dir = " + _obbVideoSample.GetComponent<GvrVideoPlayerTexture>().videoURL + ".";
     }
 
+    public void OnBackButtonClick()
+    {
+        this.DestoryPathObjectList();
+        //Debug.Log("parent = " + Directory.GetParent(_currentPath).FullName);
+        _currentPath = Directory.GetParent(_currentPath).FullName;
+        this.GenerateCurrentPathObject();
+    }
+
     public void OnFolderButtonClick(GameObject buttonObject)
     {
         this.DestoryPathObjectList();
-        _currentPath += "/" + buttonObject.transform.Find("Text").GetComponent<Text>().text;
-        Debug.Log("enter " + _currentPath + " folder!!");
+        _currentPath =  Path.Combine(_currentPath, buttonObject.transform.Find("Text").GetComponent<Text>().text);
+        //Debug.Log("enter " + _currentPath + " folder!!");
         this.GenerateCurrentPathObject();
     } 
 
     public void OnFileButtonClick(GameObject buttonObject)
     {
         this.DestoryPathObjectList();
-        _currentPath += "/" + buttonObject.transform.Find("Text").GetComponent<Text>().text;
-        Debug.Log("open " + _currentPath + " file!!");
+        _currentPath = Path.Combine(_currentPath, buttonObject.transform.Find("Text").GetComponent<Text>().text);
+        //Debug.Log("open " + _currentPath + " file!!");
     }
 
     private void DestoryPathObjectList()
@@ -57,32 +66,45 @@ public class LocalPathController : MonoBehaviour
         foreach (Transform child in pathObjectList)
             Destroy(child.gameObject);
     }
-    public static string GetAndroidInternalFilesDir()
-    {
-        string[] potentialDirectories = new string[]
-        {
-        "/mnt/sdcard",
-        "/sdcard",
-        "/storage/sdcard0",
-        "/storage/sdcard1"
-        };
 
-        if (Application.platform == RuntimePlatform.Android)
-        {
-            for (int i = 0; i < potentialDirectories.Length; i++)
-            {
-                if (Directory.Exists(potentialDirectories[i]))
-                {
-                    return potentialDirectories[i];
-                }
-            }
-        }
-        return "";
-    }
+    //public static string GetAndroidInternalFilesDir()
+    //{
+    //    string[] potentialDirectories = new string[]
+    //    {
+    //    "/mnt/sdcard",
+    //    "/sdcard",
+    //    "/storage/sdcard0",
+    //    "/storage/sdcard1"
+    //    };
+
+    //    if (Application.platform == RuntimePlatform.Android)
+    //    {
+    //        for (int i = 0; i < potentialDirectories.Length; i++)
+    //        {
+    //            if (Directory.Exists(potentialDirectories[i]))
+    //            {
+    //                return potentialDirectories[i];
+    //            }
+    //        }
+    //    }
+    //    return "";
+    //}
 
     private void GenerateCurrentPathObject()
     {
         _pathFolders = Directory.GetDirectories(_currentPath);
+
+        try
+        {
+            //Debug.Log("CurrentPath = " + _currentPath);
+            //Debug.Log("Directory.GetParent(_currentPath).Exists = " + Directory.GetParent(_currentPath).Exists);
+            if (Directory.GetParent(_currentPath).Exists)
+            {
+                this.GenerateBackButtonUnderFolder();
+            }
+        }
+        catch { }
+
         foreach (string pathFolder in _pathFolders)
         {
             //Debug.Log("pathFolder = " + pathFolder);
@@ -95,6 +117,13 @@ public class LocalPathController : MonoBehaviour
             //Debug.Log("pathFiles = " + pathFile);
             this.GenerateFileButtonUnderFolder(Path.GetFileName(pathFile));
         }
+    }
+
+    private void GenerateBackButtonUnderFolder()
+    {
+        GameObject cloneFileButton = Instantiate(_backButtonSample, this.transform.Find("FilesFoldersList"));
+        cloneFileButton.transform.Find("Text").GetComponent<Text>().text = "..";
+        cloneFileButton.SetActive(true);
     }
 
     private void GenerateFileButtonUnderFolder(string fileName)
